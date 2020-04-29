@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <%- include('../partials/head') %>
+  <title>To Do App - Add New Item</title>
+</head>
+
+<body>
+
+  <%- include('../partials/header') %>
+
+  <main>
+    <h2>Add Task</h2>
+    <form method="post" action="/addItem">
+      <fieldset>
+        <legend>Add A Task</legend>
+        <label>
+          <span>Add Task</span>
+          <input name="task" placeholder="Task Details" />
+        </label>
+        <div class="status">
+          <label>
+            <input type="radio" name="status" value="complete" />
+            <span>Complete</span>
+          </label>
+          <label>
+            <input type="radio" name="status" value="incomplete" />
+            <span>Incomplete</span>
+          </label>
+        </div>
+        <button type="submit">Save Item</button>
+      </fieldset>
+    </form>
+  </main>
+
+  <footer>&copy 2020 John</footer>
+
+  <%- include('../partials/scripts') %>
+
+</body>
+
+</html>
