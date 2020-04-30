@@ -2,34 +2,105 @@
 
 require('dotenv').config();
 const express = require('express');
+const pg = require('pg');
 
 const app = express();
 
 const PORT = process.env.PORT;
 
-// Express Setup
+// Application Setup
+const client = new pg.Client(process.env.POTATOES);
+app.use( express.urlencoded({extended:true}));
 app.set('view engine', 'ejs');
 
 // Route Definitions
 app.use( express.static('./www'));
 
 // When someone does a get request for '/', run handleHomePage
-app.get('/', handleHomePage);
-app.get('/add', handleAddItem);
+app.get('/', handleHomePage); // "READ/GET"
+app.get('/task/:coolstuff', handleGetOneTask); // "READ/GET" only one
+app.get('/addform', handleAddForm); //
+app.post('/add', handleNewItem); // "CREATE POST"
+// /updateForm and /update
 app.get('/bad', causeError);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
 // Route Handlers
 
+// Users' intent is to "READ" a list of to do items from the DB
 function handleHomePage( request, response ) {
-  // Send a response to the browser with a code of 200
-  // Render the contents of './views/pages/index.ejs'
-  response.status(200).render('pages/index');
+  // Query our Database for all To Do Items
+  const SQL = 'SELECT * FROM tasks';
+
+  client.query(SQL)
+    // The query worked ... send the results to the template
+    .then( results => {
+      // Send a response to the browser with a code of 200
+      // Render the contents of './views/pages/index.ejs'
+      // Send the results from the query
+      response.status(200).render('pages/index', {tasks:results.rows });
+    })
+    .catch( error => {
+      console.error('ERROR', error.message);
+    });
+
 }
 
-function handleAddItem( request, response ) {
+// 6
+
+// Users Intent: Get one task from the database by ID
+function handleGetOneTask(request, response) {
+  // request.query == Query String (?this=that&what=how)
+  // request.body == Form POST
+  // request.params == /x/y/z
+  const SQL = `SELECT * FROM tasks WHERE id = $1`;
+  const VALUES = [request.params.coolstuff];
+
+  console.log('getting', request.params.coolstuff);
+
+  client.query(SQL, VALUES)
+    .then( results => {
+      response.status(200).render('pages/task', {task:results.rows[0]});
+    })
+    .catch(error => {
+      console.error(error.message);
+    });
+}
+
+function handleAddForm( request, response ) {
   response.status(200).render('pages/add');
+}
+
+function handleNewItem( request, response ) {
+  console.log('Item to be added: ', request.body);
+  let SQL = `
+    INSERT INTO tasks (task, assignee, category, complete)
+    VALUES ( $1, $2, $3, $4 )
+  `;
+  let VALUES = [
+    request.body.task,
+    request.body.assignee,
+    request.body.category,
+    request.body.complete,
+  ];
+
+  if ( ! (request.body.task || request.body.assignee || request.body.cateogry || request.body.complete) ) {
+    throw new Error('invalid input');
+  }
+
+  client.query(SQL, VALUES)
+    .then( results => {
+      // result.rows will have the number of rows that were affected by the SQL
+      // .render()
+      // .send()
+      // .json()
+      response.status(200).redirect('/');
+    })
+    .catch( error => {
+      console.error( error.message );
+    });
+
 }
 
 function causeError( request, response ) {
@@ -49,4 +120,8 @@ function startServer(PORT) {
   app.listen(PORT, () => console.log(`Up on port ${PORT}`));
 }
 
-startServer(PORT);
+client.connect()
+  .then( () => {
+    startServer(PORT);
+  })
+  .catch( error => console.error(error.message));

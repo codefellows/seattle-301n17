@@ -11,19 +11,10 @@
   <%- include('../partials/header') %>
 
   <main>
-    <ul>
-      <% tasks.forEach( task => { %>
+    <h2><%= task.task %></h2>
+    <h3>To Be Done By: <%= task.assignee %></h3>
+    <h4>Status: <%= task.complete %></h4>
 
-      <li>
-        <%= task.task %>
-        is for
-        <%= task.assignee %>
-        ... completed?
-        <%=  task.complete %>
-      </li>
-
-      <% }) %>
-    </ul>
   </main>
 
   <footer>
